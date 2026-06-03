@@ -45,6 +45,25 @@ make build
 ./permission-extractor-tui --clientId <CLIENT_ID> --space <SPACE_ID>
 ```
 
+### Using a `.env` File
+
+Create a `.env` file in the application directory with the following variables:
+
+```env
+NUMSPOT_CLIENT_ID=your-oauth2-client-id
+NUMSPOT_CLIENT_SECRET=your-oauth2-client-secret
+NUMSPOT_SPACE_ID=your-space-uuid
+NUMSPOT_BASE_URL=https://api.eu-west-2.numspot.com
+```
+
+Then run:
+
+```bash
+./permission-extractor-tui
+```
+
+The app will automatically load the `.env` file. If all required fields are present, the configuration screen is skipped. Press `s` at any time to edit settings.
+
 ### Command Line Options
 
 | Option | Description |
