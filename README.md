@@ -53,7 +53,7 @@ Create a `.env` file in the application directory with the following variables:
 NUMSPOT_CLIENT_ID=your-oauth2-client-id
 NUMSPOT_CLIENT_SECRET=your-oauth2-client-secret
 NUMSPOT_SPACE_ID=your-space-uuid
-# Use the URL of your target environment (preprod, staging, prod...)
+# Use the URL of your target environment (preprod, prod...)
 NUMSPOT_BASE_URL=https://api.eu-west-2.numspot.com
 ```
 
