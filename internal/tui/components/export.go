@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"permission-extractor-tui/internal/api"
@@ -23,8 +24,11 @@ type ExportModel struct {
 }
 
 func NewExportModel() ExportModel {
+	home, _ := os.UserHomeDir()
+	downloads := filepath.Join(home, "Downloads")
+	_ = os.MkdirAll(downloads, 0755)
 	return ExportModel{
-		filename: fmt.Sprintf("permissions_%s.csv", time.Now().Format("20060102_150405")),
+		filename: filepath.Join(downloads, fmt.Sprintf("permissions_%s.csv", time.Now().Format("20060102_150405"))),
 	}
 }
 
@@ -39,7 +43,7 @@ func (m ExportModel) Update(msg tea.Msg) (ExportModel, tea.Cmd) {
 func (m ExportModel) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86"))
+		Foreground(lipgloss.Color("#89b4fa"))
 
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
@@ -52,7 +56,7 @@ func (m ExportModel) View() string {
 	lines = append(lines, labelStyle.Render(fmt.Sprintf("Mode: %s", m.mode.DisplayName())))
 	lines = append(lines, "")
 	lines = append(lines, labelStyle.Render("Output file:"))
-	lines = append(lines, "  "+m.filename)
+	lines = append(lines, "  "+filepath.Base(m.filename))
 	lines = append(lines, "")
 
 	if m.exported && m.err == "" {
@@ -72,15 +76,18 @@ func (m *ExportModel) SetRows(rows []api.CSVRow, mode Mode) {
 	m.mode = mode
 	m.exported = false
 	m.err = ""
+	home, _ := os.UserHomeDir()
+	downloads := filepath.Join(home, "Downloads")
+	_ = os.MkdirAll(downloads, 0755)
 	switch mode {
 	case ModeResource:
-		m.filename = fmt.Sprintf("resource_access_%s.csv", time.Now().Format("20060102_150405"))
+		m.filename = filepath.Join(downloads, fmt.Sprintf("resource_access_%s.csv", time.Now().Format("20060102_150405")))
 	case ModeIdentity:
-		m.filename = fmt.Sprintf("identity_resources_%s.csv", time.Now().Format("20060102_150405"))
+		m.filename = filepath.Join(downloads, fmt.Sprintf("identity_resources_%s.csv", time.Now().Format("20060102_150405")))
 	case ModeServiceAccount:
-		m.filename = fmt.Sprintf("sa_access_%s.csv", time.Now().Format("20060102_150405"))
+		m.filename = filepath.Join(downloads, fmt.Sprintf("sa_access_%s.csv", time.Now().Format("20060102_150405")))
 	default:
-		m.filename = fmt.Sprintf("user_access_%s.csv", time.Now().Format("20060102_150405"))
+		m.filename = filepath.Join(downloads, fmt.Sprintf("user_access_%s.csv", time.Now().Format("20060102_150405")))
 	}
 }
 
