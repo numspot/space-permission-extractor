@@ -56,8 +56,8 @@ func (m ResultsModel) maxVisibleRows() int {
 }
 
 func (m ResultsModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#89b4fa"))
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#f9e2af"))
 	cellStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
 	fadedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 
