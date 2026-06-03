@@ -1,5 +1,14 @@
 # NumSpot Permission Extractor TUI
 
+```
+ _  _                         _   
+| \| |_  _ _ __  ____ __  ___| |_ 
+| .` | || | '  \(_-< '_ \/ _ \  _|
+|_|\_|\_,_|_|_|_/__/ .__/\___/\__|
+                   |_|            
+    -- Permission Extractor --
+```
+
 Terminal User Interface for extracting permissions from NumSpot spaces.
 
 ## Features
@@ -11,8 +20,8 @@ Terminal User Interface for extracting permissions from NumSpot spaces.
   - **By Resource**: List identities with access to a specific resource
   - **By Identity**: List resources accessible by a specific user
 - Real-time progress logs
-- Scrollable results table
-- CSV export
+- Scrollable results table with colored headers
+- **CSV export** to `~/Downloads` folder
 
 ## Installation
 

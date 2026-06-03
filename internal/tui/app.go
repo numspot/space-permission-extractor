@@ -130,11 +130,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
 		a.height = msg.Height
-		a.configModel.SetSize(msg.Width-8, msg.Height-10)
-		a.modeModel.SetSize(msg.Width-8, msg.Height-10)
-		a.progressModel.SetSize(msg.Width-8, msg.Height-10)
-		a.resultsModel.SetSize(msg.Width-8, msg.Height-10)
-		a.exportModel.SetSize(msg.Width-8, msg.Height-10)
+		a.configModel.SetSize(msg.Width-8, msg.Height-14)
+		a.modeModel.SetSize(msg.Width-8, msg.Height-14)
+		a.progressModel.SetSize(msg.Width-8, msg.Height-14)
+		a.resultsModel.SetSize(msg.Width-8, msg.Height-14)
+		a.exportModel.SetSize(msg.Width-8, msg.Height-14)
 
 	case LogMsg:
 		a.logMessages = append(a.logMessages, msg)
@@ -184,12 +184,18 @@ func (a *App) View() string {
 
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86"))
+		Foreground(lipgloss.Color("#f9e2af"))
 
-	title := titleStyle.Render("▌ NumSpot Permission Extractor")
+	logo := " _  _                         _   \n" +
+		"| \\| |_  _ _ __  ____ __  ___| |_ \n" +
+		"| .` | || | '  \\(_-< '_ \\/ _ \\  _|\n" +
+		"|_|\\_|\\_,_|_|_|_/__/ .__/\\___/\\__|\n" +
+		"                   |_|\n" +
+		"    -- Permission Extractor --"
+	title := titleStyle.Render(logo)
 
 	sidebarStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	activeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	activeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#f9e2af"))
 
 	var content string
 	switch a.screen {
@@ -220,7 +226,7 @@ func (a *App) View() string {
 	if contentWidth < 30 {
 		contentWidth = 30
 	}
-	mainHeight := a.height - 6
+	mainHeight := a.height - 11
 	if mainHeight < 6 {
 		mainHeight = 6
 	}
@@ -229,7 +235,7 @@ func (a *App) View() string {
 		Width(contentWidth).
 		Height(mainHeight).
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("62")).
+		BorderForeground(lipgloss.Color("250")).
 		Padding(1, 1).
 		Render(content)
 

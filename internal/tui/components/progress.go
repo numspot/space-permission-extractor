@@ -27,9 +27,9 @@ func (m ProgressModel) Update(msg tea.Msg) (ProgressModel, tea.Cmd) {
 func (m ProgressModel) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86"))
+		Foreground(lipgloss.Color("#89b4fa"))
 
-	infoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	infoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa"))
 	warnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("82"))

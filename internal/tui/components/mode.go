@@ -139,8 +139,8 @@ func (m ModeModel) Update(msg tea.Msg) (ModeModel, tea.Cmd) {
 }
 
 func (m ModeModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
-	selectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#89b4fa"))
+	selectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa"))
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	fadedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 

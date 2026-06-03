@@ -111,15 +111,15 @@ func (m *ConfigModel) updateFocus() {
 func (m ConfigModel) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86"))
+		Foreground(lipgloss.Color("#89b4fa"))
 
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	focusedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	focusedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#89b4fa"))
 	buttonStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("86")).
+		Foreground(lipgloss.Color("#89b4fa")).
 		Padding(0, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("86"))
+		BorderForeground(lipgloss.Color("#89b4fa"))
 	buttonInactiveStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241")).
 		Padding(0, 2).
@@ -169,7 +169,7 @@ func (m ConfigModel) View() string {
 	valid := m.Valid()
 	statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
 	if valid {
-		statusStyle = statusStyle.Foreground(lipgloss.Color("86"))
+		statusStyle = statusStyle.Foreground(lipgloss.Color("#89b4fa"))
 	}
 
 	var status string
