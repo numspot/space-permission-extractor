@@ -340,6 +340,16 @@ func (m ResultsModel) renderResourceIdentityTable(headerStyle, cellStyle, fadedS
 }
 
 func (m *ResultsModel) SetRows(rows []api.CSVRow, mode Mode) {
+	// For ModeResource, filter out rows without an email address
+	if mode == ModeResource {
+		var filtered []api.CSVRow
+		for _, r := range rows {
+			if strings.TrimSpace(r.EntityEmail) != "" {
+				filtered = append(filtered, r)
+			}
+		}
+		rows = filtered
+	}
 	m.allRows = rows
 	m.rows = rows
 	m.mode = mode
