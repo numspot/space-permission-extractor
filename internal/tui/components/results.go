@@ -12,14 +12,18 @@ import (
 
 type ResultsModel struct {
 	rows    []api.CSVRow
+	allRows []api.CSVRow // unfiltered original rows
 	mode    Mode
 	scrollY int
 	width   int
 	height  int
+	search  SearchModel
 }
 
 func NewResultsModel() ResultsModel {
-	return ResultsModel{}
+	return ResultsModel{
+		search: NewSearchModel(),
+	}
 }
 
 func (m ResultsModel) Init() tea.Cmd {
@@ -29,12 +33,52 @@ func (m ResultsModel) Init() tea.Cmd {
 func (m ResultsModel) Update(msg tea.Msg) (ResultsModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.search.Active {
+			switch msg.String() {
+			case "esc":
+				m.search.Deactivate()
+				m.rows = m.allRows
+				m.scrollY = 0
+				return m, nil
+			case "ctrl+r":
+				m.search.Input.SetValue("")
+				m.rows = m.allRows
+				m.scrollY = 0
+				return m, nil
+			case "up", "k":
+				if m.scrollY > 0 {
+					m.scrollY--
+				}
+				return m, nil
+			case "down", "j":
+				maxScroll := len(m.rows) - m.maxVisibleRows()
+				if maxScroll < 0 {
+					maxScroll = 0
+				}
+				if m.scrollY < maxScroll {
+					m.scrollY++
+				}
+				return m, nil
+			}
+			oldValue := m.search.Input.Value()
+			var cmd tea.Cmd
+			m.search, cmd = m.search.Update(msg)
+			if m.search.Input.Value() != oldValue {
+				m.applySearch()
+			}
+			return m, cmd
+		}
+
 		switch msg.String() {
-		case "up":
+		case "/":
+			m.search.Activate()
+			m.search.SetWidth(m.width)
+			return m, nil
+		case "up", "k":
 			if m.scrollY > 0 {
 				m.scrollY--
 			}
-		case "down":
+		case "down", "j":
 			maxScroll := len(m.rows) - m.maxVisibleRows()
 			if maxScroll < 0 {
 				maxScroll = 0
@@ -49,10 +93,14 @@ func (m ResultsModel) Update(msg tea.Msg) (ResultsModel, tea.Cmd) {
 }
 
 func (m ResultsModel) maxVisibleRows() int {
-	if m.height < 8 {
+	searchHeight := 0
+	if m.search.Active {
+		searchHeight = 1
+	}
+	if m.height < 8+searchHeight {
 		return 1
 	}
-	return m.height - 6
+	return m.height - 6 - searchHeight
 }
 
 func (m ResultsModel) View() string {
@@ -64,9 +112,17 @@ func (m ResultsModel) View() string {
 	var lines []string
 	lines = append(lines, titleStyle.Render(fmt.Sprintf("Results: %d rows (%s)", len(m.rows), m.mode.DisplayName())))
 
+	if m.search.Active {
+		lines = append(lines, m.search.View())
+	}
+
 	if len(m.rows) == 0 {
-		lines = append(lines, fadedStyle.Render("No results"))
-		lines = append(lines, fadedStyle.Render("Enter: export | Esc: back"))
+		if len(m.allRows) > 0 {
+			lines = append(lines, fadedStyle.Render("No matches"))
+		} else {
+			lines = append(lines, fadedStyle.Render("No results"))
+		}
+		lines = append(lines, fadedStyle.Render("Enter: export | /: search | Esc: back"))
 		return lipgloss.JoinVertical(lipgloss.Left, lines...)
 	}
 
@@ -77,15 +133,49 @@ func (m ResultsModel) View() string {
 		lines = append(lines, m.renderUserSATable(headerStyle, cellStyle, fadedStyle)...)
 	}
 
-	lines = append(lines, fadedStyle.Render("Up/Down: scroll | Enter: export | Esc: back"))
+	lines = append(lines, fadedStyle.Render("Up/Down: scroll | Enter: export | /: search | Esc: back"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
+func (m *ResultsModel) applySearch() {
+	query := strings.ToLower(m.search.Input.Value())
+	if query == "" {
+		m.rows = m.allRows
+		return
+	}
+	m.scrollY = 0
+	var filtered []api.CSVRow
+	for _, row := range m.allRows {
+		if m.rowMatches(row, query) {
+			filtered = append(filtered, row)
+		}
+	}
+	m.rows = filtered
+}
+
+func (m ResultsModel) rowMatches(row api.CSVRow, query string) bool {
+	fields := []string{
+		row.EntityID, row.EntityName, row.EntityEmail,
+		row.ItemType, row.ItemName, row.ItemDescription,
+		row.ResourceType, row.Domain, row.ItemAction,
+	}
+	for _, f := range fields {
+		if strings.Contains(strings.ToLower(f), query) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m ResultsModel) IsSearchActive() bool {
+	return m.search.Active
+}
+
 type colDef struct {
-	name  string
-	field func(api.CSVRow) string
-	min   int
+	name   string
+	field  func(api.CSVRow) string
+	min    int
 	weight float64
 }
 
@@ -250,14 +340,19 @@ func (m ResultsModel) renderResourceIdentityTable(headerStyle, cellStyle, fadedS
 }
 
 func (m *ResultsModel) SetRows(rows []api.CSVRow, mode Mode) {
+	m.allRows = rows
 	m.rows = rows
 	m.mode = mode
 	m.scrollY = 0
+	if m.search.Active {
+		m.search.Deactivate()
+	}
 }
 
 func (m *ResultsModel) SetSize(width, height int) {
 	m.width = width
 	m.height = height
+	m.search.SetWidth(width)
 }
 
 func truncate(s string, max int) string {
