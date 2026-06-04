@@ -59,6 +59,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// When search is active in Results, only allow ctrl+c globally
+		if a.screen == ScreenResults && a.resultsModel.IsSearchActive() {
+			if msg.String() == "ctrl+c" {
+				return a, tea.Quit
+			}
+			break
+		}
+
 		switch msg.String() {
 		case "ctrl+c":
 			return a, tea.Quit
@@ -89,7 +97,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return a, nil
 				}
 			}
-		case "s":
+		case "ctrl+s":
 			if a.screen != ScreenConfig && a.screen != ScreenProgress {
 				if a.screen == ScreenMode && a.modeModel.IsInputFocused() {
 				} else {
@@ -252,13 +260,13 @@ func (a *App) getHelpText() string {
 	case ScreenConfig:
 		return "Tab: next | Shift+Tab: prev | Enter: continue | Esc: quit"
 	case ScreenMode:
-		return "Up/Down: select | Enter: confirm | s: settings | Esc: back"
+		return "Up/Down: select | Enter: confirm | Ctrl+S: settings | Esc: back"
 	case ScreenProgress:
 		return "Esc: cancel"
 	case ScreenResults:
-		return "Up/Down: scroll | Enter: export | s: settings | Esc: back"
+		return "Up/Down: scroll | Enter: export | /: search | Ctrl+S: settings | Esc: back"
 	case ScreenExport:
-		return "Enter: save | s: settings | Esc: back"
+		return "Enter: save | Ctrl+S: settings | Esc: back"
 	default:
 		return ""
 	}

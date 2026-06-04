@@ -12,14 +12,18 @@ import (
 
 type ResultsModel struct {
 	rows    []api.CSVRow
+	allRows []api.CSVRow // unfiltered original rows
 	mode    Mode
 	scrollY int
 	width   int
 	height  int
+	search  SearchModel
 }
 
 func NewResultsModel() ResultsModel {
-	return ResultsModel{}
+	return ResultsModel{
+		search: NewSearchModel(),
+	}
 }
 
 func (m ResultsModel) Init() tea.Cmd {
@@ -29,12 +33,52 @@ func (m ResultsModel) Init() tea.Cmd {
 func (m ResultsModel) Update(msg tea.Msg) (ResultsModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.search.Active {
+			switch msg.String() {
+			case "esc":
+				m.search.Deactivate()
+				m.rows = m.allRows
+				m.scrollY = 0
+				return m, nil
+			case "ctrl+r":
+				m.search.Input.SetValue("")
+				m.rows = m.allRows
+				m.scrollY = 0
+				return m, nil
+			case "up", "k":
+				if m.scrollY > 0 {
+					m.scrollY--
+				}
+				return m, nil
+			case "down", "j":
+				maxScroll := len(m.rows) - m.maxVisibleRows()
+				if maxScroll < 0 {
+					maxScroll = 0
+				}
+				if m.scrollY < maxScroll {
+					m.scrollY++
+				}
+				return m, nil
+			}
+			oldValue := m.search.Input.Value()
+			var cmd tea.Cmd
+			m.search, cmd = m.search.Update(msg)
+			if m.search.Input.Value() != oldValue {
+				m.applySearch()
+			}
+			return m, cmd
+		}
+
 		switch msg.String() {
-		case "up":
+		case "/":
+			m.search.Activate()
+			m.search.SetWidth(m.width)
+			return m, nil
+		case "up", "k":
 			if m.scrollY > 0 {
 				m.scrollY--
 			}
-		case "down":
+		case "down", "j":
 			maxScroll := len(m.rows) - m.maxVisibleRows()
 			if maxScroll < 0 {
 				maxScroll = 0
@@ -49,10 +93,14 @@ func (m ResultsModel) Update(msg tea.Msg) (ResultsModel, tea.Cmd) {
 }
 
 func (m ResultsModel) maxVisibleRows() int {
-	if m.height < 8 {
+	searchHeight := 0
+	if m.search.Active {
+		searchHeight = 1
+	}
+	if m.height < 8+searchHeight {
 		return 1
 	}
-	return m.height - 6
+	return m.height - 6 - searchHeight
 }
 
 func (m ResultsModel) View() string {
@@ -64,9 +112,17 @@ func (m ResultsModel) View() string {
 	var lines []string
 	lines = append(lines, titleStyle.Render(fmt.Sprintf("Results: %d rows (%s)", len(m.rows), m.mode.DisplayName())))
 
+	if m.search.Active {
+		lines = append(lines, m.search.View())
+	}
+
 	if len(m.rows) == 0 {
-		lines = append(lines, fadedStyle.Render("No results"))
-		lines = append(lines, fadedStyle.Render("Enter: export | Esc: back"))
+		if len(m.allRows) > 0 {
+			lines = append(lines, fadedStyle.Render("No matches"))
+		} else {
+			lines = append(lines, fadedStyle.Render("No results"))
+		}
+		lines = append(lines, fadedStyle.Render("Enter: export | /: search | Esc: back"))
 		return lipgloss.JoinVertical(lipgloss.Left, lines...)
 	}
 
@@ -77,29 +133,127 @@ func (m ResultsModel) View() string {
 		lines = append(lines, m.renderUserSATable(headerStyle, cellStyle, fadedStyle)...)
 	}
 
-	lines = append(lines, fadedStyle.Render("Up/Down: scroll | Enter: export | Esc: back"))
+	lines = append(lines, fadedStyle.Render("Up/Down: scroll | Enter: export | /: search | Esc: back"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+func (m *ResultsModel) applySearch() {
+	query := strings.ToLower(m.search.Input.Value())
+	if query == "" {
+		m.rows = m.allRows
+		return
+	}
+	m.scrollY = 0
+	var filtered []api.CSVRow
+	for _, row := range m.allRows {
+		if m.rowMatches(row, query) {
+			filtered = append(filtered, row)
+		}
+	}
+	m.rows = filtered
+}
+
+func (m ResultsModel) rowMatches(row api.CSVRow, query string) bool {
+	fields := []string{
+		row.EntityID, row.EntityName, row.EntityEmail,
+		row.ItemType, row.ItemName, row.ItemDescription,
+		row.ResourceType, row.Domain, row.ItemAction,
+	}
+	for _, f := range fields {
+		if strings.Contains(strings.ToLower(f), query) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m ResultsModel) IsSearchActive() bool {
+	return m.search.Active
+}
+
+type colDef struct {
+	name   string
+	field  func(api.CSVRow) string
+	min    int
+	weight float64
+}
+
+func distributeWidths(defs []colDef, available int, gap int) []int {
+	n := len(defs)
+	if n == 0 || available <= 0 {
+		return make([]int, n)
+	}
+
+	minSum := 0
+	weightSum := 0.0
+	for _, d := range defs {
+		minSum += d.min
+		weightSum += d.weight
+	}
+
+	gaps := gap * (n - 1)
+	if gaps < 0 {
+		gaps = 0
+	}
+
+	extra := available - minSum - gaps
+	if extra < 0 {
+		extra = 0
+	}
+
+	widths := make([]int, n)
+	for i, d := range defs {
+		bonus := int(float64(extra) * (d.weight / weightSum))
+		widths[i] = d.min + bonus
+	}
+
+	extraUsed := gaps
+	for _, w := range widths {
+		extraUsed += w
+	}
+
+	if diff := available - extraUsed; diff > 0 && weightSum > 0 {
+		for i := range widths {
+			if defs[i].weight > 0 {
+				widths[i] += diff
+				break
+			}
+		}
+	}
+
+	return widths
 }
 
 func (m ResultsModel) renderUserSATable(headerStyle, cellStyle, fadedStyle lipgloss.Style) []string {
 	var lines []string
 
-	entityW := 40
-	idW := 38
-	typeW := 11
-	nameW := 25
-	actionW := 15
-	separatorCount := 5
-	descW := m.width - entityW - idW - typeW - nameW - actionW - separatorCount
-	if descW < 15 {
-		descW = 15
+	gap := 1
+	defs := []colDef{
+		{name: "Entity", field: func(r api.CSVRow) string { return r.EntityName }, min: 8, weight: 3},
+		{name: "ID", field: func(r api.CSVRow) string { return r.EntityID }, min: 12, weight: 3},
+		{name: "Type", field: func(r api.CSVRow) string { return r.ItemType }, min: 6, weight: 1},
+		{name: "Name", field: func(r api.CSVRow) string { return r.ItemName }, min: 8, weight: 2},
+		{name: "Action", field: func(r api.CSVRow) string { return r.ItemAction }, min: 6, weight: 1},
+		{name: "Description", field: func(r api.CSVRow) string { return r.ItemDescription }, min: 10, weight: 3},
 	}
-	totalW := entityW + idW + typeW + nameW + actionW + descW + separatorCount
+
+	widths := distributeWidths(defs, m.width, gap)
+	totalW := 0
+	for i, w := range widths {
+		if i > 0 {
+			totalW += gap
+		}
+		totalW += w
+	}
 
 	sep := strings.Repeat("─", totalW)
 
-	lines = append(lines, headerStyle.Render(fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s", entityW, "Entity", idW, "ID", typeW, "Type", nameW, "Name", actionW, "Action", descW, "Description")))
+	var headerCells []string
+	for i, d := range defs {
+		headerCells = append(headerCells, fmt.Sprintf("%-*s", widths[i], truncate(d.name, widths[i])))
+	}
+	lines = append(lines, headerStyle.Render(strings.Join(headerCells, strings.Repeat(" ", gap))))
 	lines = append(lines, fadedStyle.Render(sep))
 
 	maxRows := m.maxVisibleRows()
@@ -114,13 +268,12 @@ func (m ResultsModel) renderUserSATable(headerStyle, cellStyle, fadedStyle lipgl
 
 	for i := start; i < end; i++ {
 		row := m.rows[i]
-		entity := truncate(row.EntityName, entityW-1)
-		id := truncate(row.EntityID, idW-1)
-		itemType := truncate(row.ItemType, typeW-1)
-		name := truncate(row.ItemName, nameW-1)
-		action := truncate(row.ItemAction, actionW-1)
-		desc := truncate(row.ItemDescription, descW-1)
-		lines = append(lines, cellStyle.Render(fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s", entityW, entity, idW, id, typeW, itemType, nameW, name, actionW, action, descW, desc)))
+		var cells []string
+		for j, d := range defs {
+			val := d.field(row)
+			cells = append(cells, fmt.Sprintf("%-*s", widths[j], truncate(val, widths[j])))
+		}
+		lines = append(lines, cellStyle.Render(strings.Join(cells, strings.Repeat(" ", gap))))
 	}
 
 	lines = append(lines, fadedStyle.Render(fmt.Sprintf("--- %d-%d/%d ---", start+1, end, len(m.rows))))
@@ -131,23 +284,34 @@ func (m ResultsModel) renderUserSATable(headerStyle, cellStyle, fadedStyle lipgl
 func (m ResultsModel) renderResourceIdentityTable(headerStyle, cellStyle, fadedStyle lipgloss.Style) []string {
 	var lines []string
 
-	idW := 38
-	entityW := 30
-	typeW := 8
-	domainW := 12
-	resourceTypeW := 14
-	authTypeW := 12
-	resourceIdW := 38
-	separatorCount := 7
-	nameW := m.width - idW - entityW - typeW - domainW - resourceTypeW - authTypeW - resourceIdW - separatorCount
-	if nameW < 15 {
-		nameW = 15
+	gap := 1
+	defs := []colDef{
+		{name: "ID", field: func(r api.CSVRow) string { return r.EntityID }, min: 8, weight: 2},
+		{name: "Entity", field: func(r api.CSVRow) string { return r.EntityEmail }, min: 8, weight: 2},
+		{name: "Type", field: func(r api.CSVRow) string { return r.EntityName }, min: 5, weight: 1},
+		{name: "Domain", field: func(r api.CSVRow) string { return r.Domain }, min: 6, weight: 1},
+		{name: "Resource", field: func(r api.CSVRow) string { return r.ResourceType }, min: 8, weight: 1},
+		{name: "Auth", field: func(r api.CSVRow) string { return r.ItemType }, min: 6, weight: 1},
+		{name: "ResourceID", field: func(r api.CSVRow) string { return r.ItemDescription }, min: 8, weight: 2},
+		{name: "Name", field: func(r api.CSVRow) string { return r.ItemName }, min: 8, weight: 2},
 	}
-	totalW := idW + entityW + typeW + domainW + resourceTypeW + authTypeW + resourceIdW + nameW + separatorCount
+
+	widths := distributeWidths(defs, m.width, gap)
+	totalW := 0
+	for i, w := range widths {
+		if i > 0 {
+			totalW += gap
+		}
+		totalW += w
+	}
 
 	sep := strings.Repeat("─", totalW)
 
-	lines = append(lines, headerStyle.Render(fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s %-*s %-*s", idW, "ID", entityW, "Entity", typeW, "Type", domainW, "Domain", resourceTypeW, "Resource", authTypeW, "Auth", resourceIdW, "ResourceID", nameW, "Name")))
+	var headerCells []string
+	for i, d := range defs {
+		headerCells = append(headerCells, fmt.Sprintf("%-*s", widths[i], truncate(d.name, widths[i])))
+	}
+	lines = append(lines, headerStyle.Render(strings.Join(headerCells, strings.Repeat(" ", gap))))
 	lines = append(lines, fadedStyle.Render(sep))
 
 	maxRows := m.maxVisibleRows()
@@ -162,15 +326,12 @@ func (m ResultsModel) renderResourceIdentityTable(headerStyle, cellStyle, fadedS
 
 	for i := start; i < end; i++ {
 		row := m.rows[i]
-		id := truncate(row.EntityID, idW-1)
-		entity := truncate(row.EntityEmail, entityW-1)
-		itemType := truncate(row.EntityName, typeW-1)
-		domain := truncate(row.Domain, domainW-1)
-		resourceType := truncate(row.ResourceType, resourceTypeW-1)
-		authType := truncate(row.ItemType, authTypeW-1)
-		resourceId := truncate(row.ItemDescription, resourceIdW-1)
-		name := truncate(row.ItemName, nameW-1)
-		lines = append(lines, cellStyle.Render(fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s %-*s %-*s", idW, id, entityW, entity, typeW, itemType, domainW, domain, resourceTypeW, resourceType, authTypeW, authType, resourceIdW, resourceId, nameW, name)))
+		var cells []string
+		for j, d := range defs {
+			val := d.field(row)
+			cells = append(cells, fmt.Sprintf("%-*s", widths[j], truncate(val, widths[j])))
+		}
+		lines = append(lines, cellStyle.Render(strings.Join(cells, strings.Repeat(" ", gap))))
 	}
 
 	lines = append(lines, fadedStyle.Render(fmt.Sprintf("--- %d-%d/%d ---", start+1, end, len(m.rows))))
@@ -179,14 +340,19 @@ func (m ResultsModel) renderResourceIdentityTable(headerStyle, cellStyle, fadedS
 }
 
 func (m *ResultsModel) SetRows(rows []api.CSVRow, mode Mode) {
+	m.allRows = rows
 	m.rows = rows
 	m.mode = mode
 	m.scrollY = 0
+	if m.search.Active {
+		m.search.Deactivate()
+	}
 }
 
 func (m *ResultsModel) SetSize(width, height int) {
 	m.width = width
 	m.height = height
+	m.search.SetWidth(width)
 }
 
 func truncate(s string, max int) string {
