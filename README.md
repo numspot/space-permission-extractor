@@ -26,6 +26,34 @@ Interactive TUI for auditing IAM permissions, roles and ACLs across all identiti
 
 ## Installation
 
+### From Releases (Recommended)
+
+1. Download the latest release for your platform from [GitHub Releases](https://github.com/numspot/space-permission-extractor/releases).
+
+2. Extract the archive:
+```bash
+# Linux/macOS
+tar -xf permission-extractor-tui_v1.x.x_linux_amd64.tar.xz
+cd permission-extractor-tui/
+
+# Windows
+# Extract the .zip and open the folder
+```
+
+3. Create a `.env` file in the same folder as the binary:
+```bash
+cat > .env << EOF
+NUMSPOT_CLIENT_ID=your-oauth2-client-id
+NUMSPOT_CLIENT_SECRET=your-oauth2-client-secret
+NUMSPOT_SPACE_ID=your-space-uuid
+EOF
+```
+
+4. Run the tool:
+```bash
+./permission-extractor-tui
+```
+
 ### From Source
 
 ```bash
@@ -34,17 +62,7 @@ cd space-permission-extractor
 make build
 ```
 
-### From Releases
-
-Download the latest release for your platform from the [Releases](https://github.com/numspot/space-permission-extractor/releases) page.
-
-```bash
-# Linux/macOS
-tar -xf permission-extractor-tui_v1.x.x_linux_amd64.tar.xz
-
-# Windows
-# Extract the zip and run permission-extractor-tui.exe
-```
+Then create a `.env` file in the project directory and run `./permission-extractor-tui`.
 
 ## Usage
 
@@ -60,9 +78,9 @@ tar -xf permission-extractor-tui_v1.x.x_linux_amd64.tar.xz
 ./permission-extractor-tui --clientId <CLIENT_ID> --space <SPACE_ID>
 ```
 
-### Using a `.env` File
+### `.env` File Variables
 
-Create a `.env` file in the application directory with the following variables:
+If you need to customize the configuration, edit the `.env` file with these variables:
 
 ```env
 NUMSPOT_CLIENT_ID=your-oauth2-client-id
@@ -72,13 +90,7 @@ NUMSPOT_SPACE_ID=your-space-uuid
 NUMSPOT_BASE_URL=https://api.eu-west-2.numspot.com
 ```
 
-Then run:
-
-```bash
-./permission-extractor-tui
-```
-
-The app will automatically load the `.env` file. If all required fields are present, the configuration screen is skipped. Press `Ctrl+S` at any time to edit settings.
+The app will automatically load the `.env` file from the current directory. If all required fields are present, the configuration screen is skipped. Press `Ctrl+S` at any time to edit settings.
 
 ### Command Line Options
 
