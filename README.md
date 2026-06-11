@@ -103,6 +103,8 @@ The app will automatically load the `.env` file from the current directory. If a
 | `--version, -v` | Show version information |
 | `--help, -h` | Show help |
 
+**Note:** Extraction modes (Users, Service Accounts, By Resource, By Identity) are selected interactively in the TUI after launch. They are not CLI flags.
+
 ### Version
 
 ```bash
