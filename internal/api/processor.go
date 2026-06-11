@@ -374,7 +374,7 @@ func (c *Client) formatRowsWithIdentity(items []AccessRights, nameToID map[strin
 			row.ItemId = ""
 			row.ItemAction = extractActionName(it.AccessTypeName)
 		case "Permission":
-			row.ItemId, _ = nameToID[it.AccessTypeName]
+			row.ItemId = nameToID[it.AccessTypeName]
 			row.ItemAction = extractActionName(it.AccessTypeName)
 		default:
 			row.ItemId = it.AccessTypeId

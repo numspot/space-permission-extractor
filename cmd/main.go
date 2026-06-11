@@ -22,14 +22,16 @@ var (
 func main() {
 	cfg := config.Config{}
 
-	cfg.LoadFromEnvFile()
+	_ = cfg.LoadFromEnvFile()
 	cfg.ApplyDefaults()
 
 	if len(os.Args) > 1 {
 		for i := 1; i < len(os.Args); i++ {
 			switch os.Args[i] {
 			case "--version", "-v":
-				fmt.Printf("permission-extractor-tui %s (rev: %s, built: %s, by: %s)\n", Version, Revision, date, builtBy)
+				summary := fmt.Sprintf("permission-extractor-tui %s (rev: %s, built: %s, by: %s)", Version, Revision, date, builtBy)
+				_ = commit // the full commit hash is captured for completeness; only short ID is used in version output
+				fmt.Println(summary)
 				os.Exit(0)
 			case "--clientId":
 				if i+1 < len(os.Args) {
