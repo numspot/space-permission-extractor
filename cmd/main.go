@@ -29,9 +29,7 @@ func main() {
 		for i := 1; i < len(os.Args); i++ {
 			switch os.Args[i] {
 			case "--version", "-v":
-				summary := fmt.Sprintf("permission-extractor-tui %s (rev: %s, built: %s, by: %s)", Version, Revision, date, builtBy)
-				_ = commit // the full commit hash is captured for completeness; only short ID is used in version output
-				fmt.Println(summary)
+				fmt.Printf("permission-extractor-tui %s (rev: %s, commit: %s, built: %s, by: %s)\n", Version, Revision, commit, date, builtBy)
 				os.Exit(0)
 			case "--clientId":
 				if i+1 < len(os.Args) {
