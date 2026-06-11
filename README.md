@@ -90,7 +90,7 @@ NUMSPOT_SPACE_ID=your-space-uuid
 NUMSPOT_BASE_URL=https://api.eu-west-2.numspot.com
 ```
 
-The app will automatically load the `.env` file from the current directory. If all required fields are present, the configuration screen is skipped. Press `Ctrl+S` at any time to edit settings.
+The app will automatically load the `.env` file from the current directory. Fields are pre-filled from the `.env` file or command-line flags. Press `Enter` to continue to the mode selection, or `Ctrl+S` at any time to edit settings.
 
 ### Command Line Options
 
