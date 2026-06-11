@@ -107,7 +107,7 @@ func (m *ExportModel) Export() error {
 		m.err = err.Error()
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()

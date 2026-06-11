@@ -110,7 +110,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch a.screen {
 			case ScreenConfig:
 				if a.configModel.GetFocusIndex() == 4 {
-					a.configModel.SaveConfig()
+					_ = a.configModel.SaveConfig()
 				} else if a.configModel.Valid() {
 					a.config = a.configModel.GetConfig()
 					a.screen = ScreenMode

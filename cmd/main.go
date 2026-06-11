@@ -10,15 +10,27 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Version variables are injected at build time by GoReleaser via ldflags
+var (
+	Version  = "dev"
+	Revision = "unknown"
+	commit   = "none"
+	date     = "unknown"
+	builtBy  = "manual"
+)
+
 func main() {
 	cfg := config.Config{}
 
-	cfg.LoadFromEnvFile()
+	_ = cfg.LoadFromEnvFile()
 	cfg.ApplyDefaults()
 
 	if len(os.Args) > 1 {
 		for i := 1; i < len(os.Args); i++ {
 			switch os.Args[i] {
+			case "--version", "-v":
+				fmt.Printf("permission-extractor-tui %s (rev: %s, commit: %s, built: %s, by: %s)\n", Version, Revision, commit, date, builtBy)
+				os.Exit(0)
 			case "--clientId":
 				if i+1 < len(os.Args) {
 					cfg.ClientID = os.Args[i+1]
@@ -49,6 +61,7 @@ func main() {
 				fmt.Println("  --clientSecret <secret> OAuth2 Client Secret")
 				fmt.Println("  --space <uuid>       Space UUID")
 				fmt.Println("  --baseUrl <url>      API Base URL (default: https://api.eu-west-2.numspot.com)")
+				fmt.Println("  --version, -v        Show version information")
 				fmt.Println("  --help, -h           Show this help")
 				fmt.Println()
 				fmt.Println("Configuration is loaded from:")
