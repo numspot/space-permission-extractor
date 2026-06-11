@@ -9,7 +9,7 @@
     -- Permission Extractor --
 ```
 
-TUI Tool to extract permission, role and ACL of all users in a Numspot Space.
+Interactive TUI for auditing IAM permissions, roles and ACLs across all identities (users & service accounts) within a NumSpot space. Exports results to CSV for compliance and security reviews.
 
 ## Features
 
