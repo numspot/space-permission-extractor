@@ -30,14 +30,14 @@ Interactive TUI for auditing IAM permissions, roles and ACLs across all identiti
 
 1. Download the latest release for your platform from [GitHub Releases](https://github.com/numspot/space-permission-extractor/releases).
 
-2. Extract the archive:
+2. Extract the archive (replace version and platform with your own):
 ```bash
 # Linux/macOS
-tar -xf permission-extractor-tui_v1.x.x_linux_amd64.tar.xz
-cd permission-extractor-tui/
+tar -xf space-permission-extractor_1.0.1_linux_amd64.tar.xz
+cd space-permission-extractor_1.0.1_linux_amd64/
 
 # Windows
-# Extract the .zip and open the folder
+# Extract the space-permission-extractor_1.0.1_windows_amd64.zip and open the folder
 ```
 
 3. Create a `.env` file in the same folder as the binary:
@@ -155,8 +155,8 @@ Releases are automated via [GoReleaser](https://goreleaser.com/) and [GitHub Act
 To create a new release:
 
 ```bash
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0
+git tag -a v1.1.0 -m "Release v1.1.0"
+git push origin v1.1.0
 ```
 
 The CI pipeline will automatically build cross-platform binaries and publish them to the [Releases](https://github.com/numspot/space-permission-extractor/releases) page.
